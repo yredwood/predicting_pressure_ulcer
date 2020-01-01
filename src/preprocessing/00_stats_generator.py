@@ -5,20 +5,22 @@ import argparse
 import os
 from utils import read_csv, write_csv
 
+from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
+
 plt.style.use('seaborn')
 
-VITAL_SIGNS_HEADER = [
-    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
-    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2'
-]
-
-LAB_HEADER = [
-    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
-    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
-    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
-    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
-    'Neutrophils', 'Platelet Count', 'White Blood Cells'
-]
+#VITAL_SIGNS_HEADER = [
+#    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
+#    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2'
+#]
+#
+#LAB_HEADER = [
+#    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
+#    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
+#    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
+#    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
+#    'Neutrophils', 'Platelet Count', 'White Blood Cells'
+#]
 
 HEADER = VITAL_SIGNS_HEADER + LAB_HEADER
 

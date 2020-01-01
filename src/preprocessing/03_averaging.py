@@ -6,29 +6,38 @@ from utils import read_csv, write_csv, hashing
 from operator import itemgetter
 from datetime import datetime, timedelta
 
-INFO_HEADER = [
-    'case/control', 'ICUSTAY_ID', 'START_TIME', 'END_TIME',
-    'TIMESTAMP', 'TIME_from_START', 'TIME_to_END'
-]
+from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 
-VITAL_SIGNS_HEADER = [
-    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
-    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2'
-]
-
-LAB_HEADER = [
-    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
-    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
-    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
-    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
-    'Neutrophils', 'Platelet Count', 'White Blood Cells'
-]
+#INFO_HEADER = [
+#    'case/control', 'ICUSTAY_ID', 'START_TIME', 'END_TIME',
+#    'TIMESTAMP', 'TIME_from_START', 'TIME_to_END'
+#]
+#
+#VITAL_SIGNS_HEADER = [
+#    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
+#    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2'
+#]
+#
+#LAB_HEADER = [
+#    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
+#    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
+#    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
+#    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
+#    'Neutrophils', 'Platelet Count', 'White Blood Cells'
+#]
 
 dir_path = './datasets'
 input_fname = os.path.join(dir_path, '02_imputation.csv')
 output_fname = os.path.join(dir_path, '03_averaging.csv')
 
-strptime = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
+
+strptime_s = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
+strptime_m = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
+def strptime(x):
+    try:
+        return strptime_s(x)
+    except:
+        return strptime_m(x)
 
 def _sorting(recordss, sort_key, reverse=True):
     for key, records in recordss.items():

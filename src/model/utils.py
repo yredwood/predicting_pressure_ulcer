@@ -16,7 +16,7 @@ FONT_SIZE_TICK = 17
 
 
 class CustomDataset(Dataset):
-    def __init__(self, dataset_root, dset_type, exclude_feature_list=None):
+    def __init__(self, dataset_root, dset_type, exclude_feature_list=[]):
 
         # load train or test dataset
         self.path = os.path.join(dataset_root, dset_type)
@@ -36,8 +36,17 @@ class CustomDataset(Dataset):
         with open(path, 'rb') as f:
             self.meta_data = pickle.load(f)
 
-        # TODO feature excluding
-
+        #exclude_feature_list = ['DBP', 'SBP']
+        self.exd, self.exs = [], []
+        for head in exclude_feature_list:
+            if head in self.meta_data['dh2ind'].keys():
+                self.exd.extend(self.meta_data['dh2ind'][head])
+            if head in self.meta_data['sh2ind'].keys():
+                self.exs.extend(self.meta_data['sh2ind'][head])
+        
+        for i in range(len(self)):
+            self.dynamic[i][:,self.exd] = 0.
+            self.static[i][self.exs] = 0.
 
     def __len__(self):
         return len(self.dynamic)
@@ -46,12 +55,22 @@ class CustomDataset(Dataset):
         return self.dynamic[idx], self.static[idx], self.label[idx]
 
 
+
+
 def collate_fn(batch):
 #    dynamic_max_len = max([len(d[0]) for d in batch])
-    dynamic = pad_sequence([torch.tensor(d[0].astype(np.float32)) for d in batch]).transpose(0,1) # batch-first
-    static = torch.tensor([d[1].astype(np.float32) for d in batch])
-    label = torch.tensor([float(d[2]) for d in batch]).unsqueeze(1)
-    return dynamic, static, label
+    # sort by length
+    dynamic_length = [len(d[0]) for d in batch]
+    sorted_idx = np.argsort(dynamic_length)
+    samples = [batch[i] for i in reversed(sorted_idx)]
+
+    dynamic = pad_sequence([torch.tensor(d[0].astype(np.float32)) for d in samples]).transpose(0,1) # batch-first
+    static = torch.tensor([d[1].astype(np.float32) for d in samples])
+    label = torch.tensor([float(d[2]) for d in samples]).unsqueeze(1)
+
+    lengths = [len(d[0]) for d in samples]
+
+    return dynamic, static, label, lengths
 
 
 def plot_roc_curve(fignum, label, prediction, legend=None, **kwargs):
@@ -71,8 +90,9 @@ def plot_roc_curve(fignum, label, prediction, legend=None, **kwargs):
 
     if legend is not None:
         ax.plot(fpr, tpr, lw=lw, alpha=alpha, color=color, linestyle=ls,
-                label='{} (AUC={:.3f})'.format(legend, auc),
+                label=legend,
                 linewidth=3)
+                #label='{} (AUC={:.3f})'.format(legend, auc),
     else:
         ax.plot(fpr, tpr, lw=lw, alpha=alpha, color=color, linewidth=3, linestyle=ls)
 
@@ -115,8 +135,9 @@ def plot_pr_curve(fignum, label, prediction, legend=None, extra_legend='', clf=F
         ax.clf()
     if legend is not None:
         ax.step(recall, precision, lw=lw, alpha=alpha, color=color, linestyle=ls,
-                 label='{} (AP={:.3f}{})'.format(legend, ap, extra_legend),
-                 linewidth=3)
+                label=legend,
+                linewidth=3)
+                 #label='{} (AP={:.3f}{})'.format(legend, ap, extra_legend),
     else:
         ax.step(recall, precision, lw=lw, alpha=alpha, color=color, linestyle=ls,
                  linewidth=3)

@@ -8,24 +8,28 @@ from operator import itemgetter
 from datetime import datetime, timedelta
 import pdb
 
-INFO_HEADER = [
-    'case/control', 'ICUSTAY_ID', 'START_TIME', 'END_TIME',
-    'TIMESTAMP', 'TIME_from_START', 'TIME_to_END'
-]
+from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 
-VITAL_SIGNS_HEADER = [
-    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
-    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2'
-]
+#INFO_HEADER = [
+#    'case/control', 'ICUSTAY_ID', 'START_TIME', 'END_TIME',
+#    'TIMESTAMP', 'TIME_from_START', 'TIME_to_END'
+#]
+#
+#VITAL_SIGNS_HEADER = [
+#    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
+#    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2'
+#]
+#
+#LAB_HEADER = [
+#    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
+#    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
+#    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
+#    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
+#    'Neutrophils', 'Platelet Count', 'White Blood Cells',
+#    'Position Change', 'Pressure Reducing Device',
+#]
 
-LAB_HEADER = [
-    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
-    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
-    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
-    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
-    'Neutrophils', 'Platelet Count', 'White Blood Cells',
-    'Position Change', 'Pressure Reducing Device',
-]
+LAB_HEADER = LAB_HEADER + ['Position Change', 'Pressure Reducing Device']
 
 dir_path = './datasets'
 input_fname = os.path.join(dir_path, '04_add_features.csv')

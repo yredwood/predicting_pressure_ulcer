@@ -8,6 +8,7 @@ from operator import itemgetter
 from datetime import datetime, timedelta
 import pdb
 
+
 '''
 HEADER = ['LOS', 'age_at_admission', 'CHF', 'Arrhy', 'VALVE', 'PULMCIRC',
           'PERIVASC', 'HTN', 'PARA', 'NEURO', 'CHRNLUNG', 'DM', 'HYPOTHY',
@@ -21,10 +22,11 @@ HEADER = ['age_at_admission', 'CHF', 'Arrhy', 'VALVE', 'PULMCIRC',
           'ARTH', 'COAG', 'OBESE', 'WGHTLOSS', 'LYTES', 'BLDLOSS', 'ANEMDEF',
           'ALCOHOL', 'DRUG', 'PSYCH', 'DEPRESS']  # zero-one values
 
-STR_HEADER = ['Gender', 'Insurance2', 'Race2']
-STR_HEADER_CLASS = [['F', 'M'], ['Private', 'Public', 'Self'],
-        ['Non-WHITE', 'WHITE']]
-
+STR_HEADER = ['Gender', 'Race2', 'Insurance2'] 
+STR_HEADER_CLASS = [['F', 'M'], 
+        ['Non-WHITE', 'WHITE'],
+        ['Private', 'Public', 'Self']]
+# private: 1 0, public: 0 1, self: 0 0
 
 dir_path = './datasets'
 input_root = './input_datasets'
@@ -64,9 +66,17 @@ def main():
         assert len(icd_code) == 1
         _icd_code = icd_code[0]
         icd_code = [_icd_code[name] for name in HEADER]
-        for _i in range(len(STR_HEADER)):
+        for _i in range(len(STR_HEADER)-1):
+            # only for gender and race
             c = STR_HEADER_CLASS[_i].index(_icd_code[STR_HEADER[_i]])
             icd_code.extend([str(c)])
+
+        if _icd_code['Insurance2']=='Private':
+            icd_code.extend(['1', '0'])
+        elif _icd_code['Insurance2']=='Public':
+            icd_code.extend(['0', '1'])
+        else:
+            icd_code.extend(['0', '0'])
 
         #feat = np.concatenate((avg, std, max_val, min_val, [float(icd_code[0])]))
         feat = np.concatenate((avg, std, max_val, min_val, icd_code))

@@ -6,23 +6,26 @@ import copy
 from utils import read_csv, write_csv, hashing
 from operator import itemgetter
 
-INFO_HEADER = [
-    'case/control', 'ICUSTAY_ID', 'START_TIME', 'END_TIME',
-    'TIMESTAMP', 'TIME_from_START', 'TIME_to_END'
-]
 
-VITAL_SIGNS_HEADER = [
-    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
-    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2'
-]
+from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 
-LAB_HEADER = [
-    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
-    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
-    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
-    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
-    'Neutrophils', 'Platelet Count', 'White Blood Cells'
-]
+#INFO_HEADER = [
+#    'case/control', 'ICUSTAY_ID', 'START_TIME', 'END_TIME',
+#    'TIMESTAMP', 'TIME_from_START', 'TIME_to_END'
+#]
+#
+#VITAL_SIGNS_HEADER = [
+#    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
+#    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2'
+#]
+#
+#LAB_HEADER = [
+#    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
+#    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
+#    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
+#    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
+#    'Neutrophils', 'Platelet Count', 'White Blood Cells'
+#]
 
 dir_path = './datasets'
 input_fname = os.path.join(dir_path, '01_outlier_removal.csv')

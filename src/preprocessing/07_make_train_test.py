@@ -3,6 +3,7 @@ import numpy as np
 import os
 import sys
 
+from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 import pdb
 
 
@@ -13,28 +14,18 @@ upsample = 1 # 1 to keep original ratio
 # input 06_...pkl and 07_...pkl and outputs 
 # lstm (or MLP) train-test dataset
 
+# headers from 05
+DYNAMIC_HEADER = VITAL_SIGNS_HEADER + LAB_HEADER + ['Position Change', 'Pressure Reducing Device']
 
-VITAL = [
-    'BRANDEN_SCORE', 'GCS', 'HR', 'RR', 'TEMPERATURE',
-    'SBP', 'DBP', 'MBP', 'SaO2', 'SpO2']
-LAB = [
-    'Lactate', 'Oxygen Saturation', 'pCO2', 'pH', 'pO2',
-    'Albumin', 'Bicarbonate', 'Total Bilirubin', 'Creatinine',
-    'Glucose', 'Potassium', 'Sodium', 'Troponin I', 'Troponin T',
-    'Urea Nitrogen', 'Hematocrit', 'Hemoglobin', 'INR(PT)',
-    'Neutrophils', 'Platelet Count', 'White Blood Cells',
-    'Position Change', 'Pressure Reducing Device']
-DYNAMIC_HEADER = VITAL + LAB
 
+# headers from 06
 HEADER = ['age_at_admission', 'CHF', 'Arrhy', 'VALVE', 'PULMCIRC',
           'PERIVASC', 'HTN', 'PARA', 'NEURO', 'CHRNLUNG', 'DM', 'HYPOTHY',
           'RENLFAIL', 'LIVER', 'ULCER', 'AIDS', 'LYMPH', 'METS', 'TUMOR',
           'ARTH', 'COAG', 'OBESE', 'WGHTLOSS', 'LYTES', 'BLDLOSS', 'ANEMDEF',
           'ALCOHOL', 'DRUG', 'PSYCH', 'DEPRESS']  # zero-one values
 
-STR_HEADER = ['Gender', 'Insurance2', 'Race2']
-STR_HEADER_CLASS = [['F', 'M'], ['Private', 'Public', 'Self'],
-        ['Non-WHITE', 'WHITE']]
+STR_HEADER = ['Gender', 'Race2', 'Private Insurance', 'Public Insurance']
 STATIC_HEADER = HEADER + STR_HEADER
 
 
@@ -114,8 +105,6 @@ if __name__=='__main__':
     test_xs = test_xs[:len(tei)//2]
     test_y = test_y[:len(tei)//2]
 
-
-
     if upsample > 1:
         positive_idx = np.where(np.array(train_y)==1)[0]
         add_x, add_xs, add_y = [], [], []
@@ -155,7 +144,7 @@ if __name__=='__main__':
     dh2ind = {}
     sh2ind = {}
     for i, h in enumerate(DYNAMIC_HEADER):
-        dh2ind[h] = i
+        dh2ind[h] = [i]
         sh2ind[h] = [i + len(DYNAMIC_HEADER) * _i for _i in range(4)] 
         # avg, std, max, min
 

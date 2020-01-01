@@ -3,15 +3,9 @@ from datetime import datetime, timedelta
 import pdb
 
 # merge position change, pressure reducing device features
-
-
-input_root = './input_datasets'
-input_fname = os.path.join(input_root, 'LAB_CHART_EVENTS_TABLE.csv')
-
 output_root = './datasets'
 if not os.path.exists(output_root):
     os.makedirs(output_root)
-
 
 data_dir = './datasets'
 input_fname = os.path.join(data_dir, '03_averaging.csv')
