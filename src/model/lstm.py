@@ -24,7 +24,7 @@ tf.random.set_seed(100)
 np.random.seed(100)
 
 model_type = ['LSTM', 'MLP', 'VT'][0]
-use_branden = False
+use_branden = True
 positive_upsample = True
 FONT_SIZE = 20
 FONT_SIZE_TICK = 17
@@ -117,7 +117,6 @@ def read_data(data_root, fold_num=0, random_seed=0):
 
     x = [(_x - avg) / std for _x in x]
 
-
     avg = np.mean(xs, axis=0)
     std = np.std(xs, axis=0)
     # only standardize non-categorical features
@@ -133,7 +132,6 @@ def read_data(data_root, fold_num=0, random_seed=0):
         for i in range(len(x)):
             x[i][:,dynamic_branden_index] = 0
             xs[i][static_branden_index] = 0
-
 
     # add case samples for data imbalance: 3 times more case data
     # split 1:4 test:train
@@ -311,14 +309,14 @@ def batch_fn(xd, xs, y):
 
 micro_preds = []; micro_targets = []
 aucs = []; aps = []
-for n_exec in range(10):
+for n_exec in range(1):
 
     # training code
     pred_all = []; label_all = []
     # =========PARAMS==============
     lr = 1e-3
-    n_epochs = 5
-    batch_size = 256
+    n_epochs = 50
+    batch_size = 32
     optimizer = tf.optimizers.Adam(lr)
     loss_fn = tf.losses.BinaryCrossentropy()
     metric_fn = bin_accuracy
