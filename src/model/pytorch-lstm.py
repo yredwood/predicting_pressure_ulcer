@@ -28,13 +28,12 @@ def parse_args():
     parser.add_argument('--model-type', default='MLP')
     parser.add_argument('--exclude-feature', default='')
     parser.add_argument('--output-root', default='results')
+    parser.add_argument('--dataset-root', default='./datasets')
     args = parser.parse_args()
     return args
 
 
 # =================================
-
-
 
 
 class VTonly(nn.Module): # vital only
@@ -62,7 +61,6 @@ class VTonly(nn.Module): # vital only
         x = self.act(self.dense(final))
         return x
         
-
 
 class MLP(nn.Module):
     def __init__(self, name='MLP', seed=0, static_dim=0):
@@ -126,7 +124,6 @@ class LSTM(nn.Module):
         return out
 
 
-
 def train_epoch(model, iterator, optimizer, criterion):
     model.train()
     epoch_loss = 0.
@@ -147,7 +144,7 @@ def train_epoch(model, iterator, optimizer, criterion):
     return epoch_loss / len(iterator)
 
 
-def test_epoch(model, iterator, criterion, logging=False):
+def test_epoch(model, iterator, criterion=None, logging=False):
 
     model.eval()
     eval_loss = []
@@ -161,8 +158,11 @@ def test_epoch(model, iterator, criterion, logging=False):
         xlen = batch[3]
         
         y_pred = model(xd, xs, xlen)
-        loss = criterion(y_pred, y_true)
-        eval_loss.append(loss.item())
+        if criterion is not None:
+            loss = criterion(y_pred, y_true).item()
+        else:
+            loss = 0.
+        eval_loss.append(loss)
         eval_pred.append(y_pred)
         eval_true.append(y_true)
 
@@ -170,27 +170,67 @@ def test_epoch(model, iterator, criterion, logging=False):
     eval_true = torch.cat(eval_true, axis=0).data.cpu().numpy()
 
     auc = get_auroc(eval_true, eval_pred)
-    pr = get_ap(eval_true, eval_pred)
+    ap = get_ap(eval_true, eval_pred)
 
 
     if logging:
         if not os.path.exists(model.name):
             os.makedirs(model.name)
-#        plot_args = {'lw': 1, 'alpha': 0.5, 'color': 'gray', 'ls': '-'}
-#        roc_fname = os.path.join(model.name, 'roc_curve_{}'.format(model.seed))
-#        plot_roc_curve(0, eval_true, eval_pred, **plot_args)
-#        plt.savefig(roc_fname)
-#
-#        pr_fname = os.path.join(model.name, 'pr_curve_{}'.format(model.seed))
-#        plot_pr_curve(1, eval_true, eval_pred, **plot_args)
-#        plt.savefig(pr_fname)
 
         vals_fname = os.path.join(model.name, 'preds_labels_{}.pkl'.format(model.seed))
         with open(vals_fname, 'wb') as f:
             pickle.dump((eval_pred, eval_true), f)
         
 
-    return np.mean(eval_loss), auc, pr
+    return np.mean(eval_loss), auc, ap
+
+
+def mlp_permutation_invariance(model, logging=True):
+
+    assert 'MLP' in model.name
+    
+    # get index auc/ap
+    dataset = CustomDataset(args.dataset_root, 'test_data.pkl')
+    test_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False,
+            collate_fn=collate_fn)
+    _, ref_auc, ref_ap = test_epoch(model, test_loader)
+
+    static_feature_list = list(sorted(dataset.meta_data['sh2ind'].keys()))
+    error_auc, error_ap = [], []
+    for permute_feature in static_feature_list:
+        dataset = CustomDataset(args.dataset_root, 'test_data.pkl')
+        static_idx = dataset.meta_data['sh2ind'][permute_feature]
+        perm_idx = np.random.permutation(len(dataset))
+        new_static = dataset.static.copy()
+        for i in range(len(dataset)):
+            new_static[i][static_idx] = dataset.static[perm_idx[i]][static_idx]
+        dataset.static = new_static
+
+        test_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False,
+                collate_fn=collate_fn)
+
+        _, auc, ap = test_epoch(model, test_loader)
+
+        # relative difference
+        error_auc.append( ((1-auc) - (1-ref_auc)) / (1-ref_auc) )
+        error_ap.append( ((1-ap) - (1-ref_ap)) / (1-ref_ap) )
+
+
+    # sorted printing
+    sorted_idx = np.argsort(error_auc)
+    for i in reversed(sorted_idx):
+        print ('{:15s} : {:.3f}'.format(static_feature_list[i], error_auc[i]))
+        
+    
+    output_data = {'header': static_feature_list,
+            'feature_importance': error_auc}
+    if logging:
+        if not os.path.exists(model.name):
+            os.makedirs(model.name)
+        output_fname = os.path.join(model.name, 'feature_importance_{}.pkl'.format(model.seed))
+        with open(output_fname, 'wb') as f:
+            pickle.dump(output_data, f)
+
 
 
 
@@ -210,15 +250,15 @@ if __name__=='__main__':
             '{}'.format(model_type))
     exclude = args.exclude_feature.split(',')
 
-    train_dataset = CustomDataset('./datasets', 'train_data.pkl', exclude)
+    train_dataset = CustomDataset(args.dataset_root, 'train_data.pkl', exclude)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
             num_workers=10, drop_last=True, collate_fn=collate_fn)
 
-    test_dataset = CustomDataset('./datasets', 'test_data.pkl', exclude)
+    test_dataset = CustomDataset(args.dataset_root, 'test_data.pkl', exclude)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
             collate_fn=collate_fn)
 
-    valid_dataset = CustomDataset('./datasets', 'valid_data.pkl', exclude)
+    valid_dataset = CustomDataset(args.dataset_root, 'valid_data.pkl', exclude)
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False,
             collate_fn=collate_fn)
 
@@ -259,8 +299,8 @@ if __name__=='__main__':
     print ('Best model AUC: {:.4f}, AP: {:.4f}'.format(test_auc, test_ap))
 
 
-
-
+    
+    mlp_permutation_invariance(model, logging=True)
 
 
 

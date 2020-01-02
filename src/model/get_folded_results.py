@@ -25,7 +25,7 @@ if __name__=='__main__':
 
     root_dir = 'results/{}'.format(model)
     flist = [os.path.join(root_dir, _dir) for _dir in os.listdir(root_dir) \
-            if _dir.endswith('.pkl')]
+            if 'preds_labels' in _dir]
 
     aucs, aps = [], []
     preds, trues = [], []
@@ -56,6 +56,32 @@ if __name__=='__main__':
     print ('Results for {} model:: {} repetition'.format(model, len(flist)))
     print ('AUC: {:.3f} ({:.3f})'.format(np.mean(aucs), np.std(aucs)))
     print ('AP: {:.3f} ({:.3f})'.format(np.mean(aps), np.std(aps)))
+
+
+    # feature importance ::
+    flist = [os.path.join(root_dir, _dir) for _dir in os.listdir(root_dir) \
+            if 'feature_importance' in _dir]
+
+    feature_importance = []
+    for fname in flist:
+        with open(fname, 'rb') as f:
+            data = pickle.load(f)
+        
+        header= data['header']
+        feature_importance.append(data['feature_importance'])
+
+    mean = np.mean(feature_importance, axis=0)
+    std = np.std(feature_importance, axis=0)
+    sorted_idx = np.argsort(mean)
+    output_string = []
+    for i in reversed(sorted_idx):
+        output = '{:20s} : {:.3f} ({:.3f})'.format(header[i], mean[i], std[i])
+        print (output)
+        output_string.append(output)
+        
+    fname = os.path.join(root_dir, 'fi.txt')
+    with open(fname, 'w') as f:
+        f.writelines( '\n'.join(output_string) )
 
 
 
