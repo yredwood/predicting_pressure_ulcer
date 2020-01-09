@@ -73,12 +73,13 @@ if __name__=='__main__':
     dynamic = np.array([(_x - avg) / (std+1e-8) for _x in dynamic])
 
     # for static, only normalize non-categorical features
+    # >>>>> also normalize categorical variables
     static = np.array(static)
     avg = np.mean(static, 0)
     std = np.std(static, 0)
     for i in range(len(static[0])):
-        if not static_data['cs'][i]:
-            static[:,i] = (static[:,i] - avg[i]) / (std[i] + 1e-8)
+        #if not static_data['cs'][i]:
+        static[:,i] = (static[:,i] - avg[i]) / (std[i] + 1e-8)
 
     # split train-val-test datasets
     split_idx = int(len(dynamic) * testset_ratio)

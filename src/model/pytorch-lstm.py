@@ -7,6 +7,7 @@ import pickle
 
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from torch.autograd import Variable
 import torch.optim as optim
 from utils import CustomDataset
 from utils import collate_fn
@@ -185,55 +186,127 @@ def test_epoch(model, iterator, criterion=None, logging=False):
     return np.mean(eval_loss), auc, ap
 
 
-def mlp_permutation_invariance(model, logging=True):
+def feature_importance(model, logging=True):
 
-    assert 'MLP' in model.name
-    
-    # get index auc/ap
-    dataset = CustomDataset(args.dataset_root, 'test_data.pkl')
-    test_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False,
-            collate_fn=collate_fn)
-    _, ref_auc, ref_ap = test_epoch(model, test_loader)
-
-    static_feature_list = list(sorted(dataset.meta_data['sh2ind'].keys()))
-    error_auc, error_ap = [], []
-    for permute_feature in static_feature_list:
-        dataset = CustomDataset(args.dataset_root, 'test_data.pkl')
-        static_idx = dataset.meta_data['sh2ind'][permute_feature]
-        perm_idx = np.random.permutation(len(dataset))
-        new_static = dataset.static.copy()
-        for i in range(len(dataset)):
-            new_static[i][static_idx] = dataset.static[perm_idx[i]][static_idx]
-        dataset.static = new_static
-
+    if 'MLP' in model.name: # permutation invariant method
+        # get index auc/ap
+        exclude = args.exclude_feature.split(',')
+        dataset = CustomDataset(args.dataset_root, 'test_data.pkl', exclude)
         test_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False,
                 collate_fn=collate_fn)
-
-        _, auc, ap = test_epoch(model, test_loader)
-
-        # relative difference
-        error_auc.append( ((1-auc) - (1-ref_auc)) / (1-ref_auc) )
-        error_ap.append( ((1-ap) - (1-ref_ap)) / (1-ref_ap) )
-
-
-    # sorted printing
-    sorted_idx = np.argsort(error_auc)
-    for i in reversed(sorted_idx):
-        print ('{:15s} : {:.3f}'.format(static_feature_list[i], error_auc[i]))
+        _, ref_auc, ref_ap = test_epoch(model, test_loader)
         
-    
-    output_data = {'header': static_feature_list,
-            'feature_importance': error_auc}
-    if logging:
-        if not os.path.exists(model.name):
-            os.makedirs(model.name)
-        output_fname = os.path.join(model.name, 'feature_importance_{}.pkl'.format(model.seed))
-        with open(output_fname, 'wb') as f:
-            pickle.dump(output_data, f)
+        # feature permuted auc/ap
+        static_feature_list = list(sorted(dataset.meta_data['sh2ind'].keys()))
+        error_auc, error_ap = [], []
+        for permute_feature in static_feature_list:
+            dataset = CustomDataset(args.dataset_root, 'test_data.pkl', exclude)
+            static_idx = dataset.meta_data['sh2ind'][permute_feature]
+            perm_idx = np.random.permutation(len(dataset))
+            new_static = dataset.static.copy()
+            for i in range(len(dataset)):
+                new_static[i][static_idx] = dataset.static[perm_idx[i]][static_idx]
+            dataset.static = new_static
+
+            test_loader = DataLoader(dataset, batch_size=args.batch_size, 
+                    shuffle=False, collate_fn=collate_fn)
+
+            _, auc, ap = test_epoch(model, test_loader)
+
+            # relative difference
+            error_auc.append( ((1-auc) - (1-ref_auc)) / (1-ref_auc) )
+            error_ap.append( ((1-ap) - (1-ref_ap)) / (1-ref_ap) )
 
 
+        # sorted printing
+        sorted_idx = np.argsort(error_auc)
+        for i in reversed(sorted_idx):
+            print ('{:15s} : {:.3f}'.format(static_feature_list[i], error_auc[i]))
+            
+        
+        output_data = {'header': static_feature_list,
+                'feature_importance': error_auc}
+        if logging:
+            if not os.path.exists(model.name):
+                os.makedirs(model.name)
+            output_fname = os.path.join(model.name, 'feature_importance_{}.pkl'.format(model.seed))
+            with open(output_fname, 'wb') as f:
+                pickle.dump(output_data, f)
 
+    else:
+        # input gradient
+        exclude = args.exclude_feature.split(',')
+        dataset = CustomDataset(args.dataset_root, 'test_data.pkl', exclude)
 
+#        # only use positive samples
+#        pidx = [i for i,l in enumerate(dataset.label) if l]
+#        dataset.dynamic = [dataset.dynamic[i] for i in pidx]
+#        dataset.static = [dataset.static[i] for i in pidx]
+#        dataset.label = [dataset.label[i] for i in pidx]
+
+        test_loader = DataLoader(dataset, batch_size=args.batch_size, 
+                shuffle=False, collate_fn=collate_fn)
+
+        dynamic_header = list(sorted(dataset.meta_data['dh2ind'].keys()))
+        dynamic_grads = np.zeros(len(dynamic_header))
+
+        static_header = list(sorted(dataset.meta_data['sh2ind'].keys()))
+        static_grads = np.zeros(len(static_header))
+
+        model.train()
+        for i, batch in enumerate(test_loader):
+            
+            xd = Variable(batch[0].cuda(), requires_grad=True)
+            xs = Variable(batch[1].cuda(), requires_grad=True)
+            y_true = batch[2].cuda()
+            xlen = batch[3]
+
+            y_pred = model(xd, xs, xlen)
+            
+            log_prob = (1-y_true) * torch.log(y_pred + 1e-8) \
+                    + y_true * torch.log((1-y_pred) + 1e-8)
+            log_prob.sum().backward()
+
+            
+            for _i, header in enumerate(dynamic_header):
+                hidx = dataset.meta_data['dh2ind'][header]
+                try:
+                    dynamic_grads[_i] += torch.abs(xd.grad[:,:,hidx]).mean(-1).sum()
+                except:
+                    pass
+
+            for _i, header in enumerate(static_header):
+                hidx = dataset.meta_data['sh2ind'][header]
+                static_grads[_i] += torch.abs(xs.grad[:,hidx]).mean(-1).sum()
+                
+#                if header == 'BRANDEN_SCORE':
+#                    pdb.set_trace()
+
+        #sorted printing
+        def sorted_print(x, header):
+            print (' ---------------------- ')
+            sorted_idx = np.argsort(x)
+            for i in reversed(sorted_idx):
+                print ('{:15s} : {:.3f}'.format(header[i], x[i]))
+
+#        sorted_print(dynamic_grads, dynamic_header)
+#        sorted_print(static_grads, static_header)
+        
+        combined = static_grads.copy()
+        for _i, header in enumerate(static_header):
+            if header in dynamic_header:
+                combined[_i] = combined[_i] + dynamic_grads[dynamic_header.index(header)]
+        
+        sorted_print(combined, static_header)
+        output_data = {'header': static_header,
+                'feature_importance': combined}
+
+        if logging:
+            if not os.path.exists(model.name):
+                os.makedirs(model.name)
+            output_fname = os.path.join(model.name, 'feature_importance_{}.pkl'.format(model.seed))
+            with open(output_fname, 'wb') as f:
+                pickle.dump(output_data, f)
 
 if __name__=='__main__':
     
@@ -300,7 +373,7 @@ if __name__=='__main__':
 
 
     
-    mlp_permutation_invariance(model, logging=True)
+    feature_importance(model, logging=True)
 
 
 
