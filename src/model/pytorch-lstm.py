@@ -15,6 +15,7 @@ from utils import get_auroc
 from utils import get_ap
 from utils import plot_roc_curve
 from utils import plot_pr_curve
+from utils import plot_trajectory
 
 import pdb
 
@@ -30,6 +31,8 @@ def parse_args():
     parser.add_argument('--exclude-feature', default='')
     parser.add_argument('--output-root', default='results')
     parser.add_argument('--dataset-root', default='./datasets')
+    parser.add_argument('--feature-importance', default=0)
+    parser.add_argument('--trajectory', default=0)
     args = parser.parse_args()
     return args
 
@@ -145,7 +148,7 @@ def train_epoch(model, iterator, optimizer, criterion):
     return epoch_loss / len(iterator)
 
 
-def test_epoch(model, iterator, criterion=None, logging=False):
+def test_epoch(model, iterator, criterion=None, logging=False, get_prediction=False):
 
     model.eval()
     eval_loss = []
@@ -157,7 +160,7 @@ def test_epoch(model, iterator, criterion=None, logging=False):
         xs = batch[1].cuda()
         y_true = batch[2].cuda()
         xlen = batch[3]
-        
+
         y_pred = model(xd, xs, xlen)
         if criterion is not None:
             loss = criterion(y_pred, y_true).item()
@@ -169,6 +172,9 @@ def test_epoch(model, iterator, criterion=None, logging=False):
 
     eval_pred = torch.cat(eval_pred, axis=0).data.cpu().numpy()
     eval_true = torch.cat(eval_true, axis=0).data.cpu().numpy()
+
+    if get_prediction:
+        return eval_pred, eval_true
 
     auc = get_auroc(eval_true, eval_pred)
     ap = get_ap(eval_true, eval_pred)
@@ -373,8 +379,45 @@ if __name__=='__main__':
 
 
     
-    feature_importance(model, logging=True)
+    if args.feature_importance:
+        feature_importance(model, logging=True)
 
+
+
+    if args.trajectory:
+        data_root = os.path.join(args.dataset_root, '09_timeline_data')
+        output_root = os.path.join(args.output_root, 'trajectory')
+        fnames = os.listdir(data_root)
+        pred_list, label_list = [], []
+        for step, fname in enumerate(fnames):
+            test_dataset = CustomDataset(data_root, fname, exclude)
+            test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False,
+                    collate_fn=collate_fn)
+            
+            pred, _label = test_epoch(model, test_loader, get_prediction=True)
+            label = 'Case' if _label[0] else 'Control'
+#
+#            data = {
+#                'GCS': [V  
+            headers = ['GCS', 'MBP']
+            dh2ind = test_dataset.meta_data['dh2ind']
+            last_data = test_dataset[-1][0]
+            data = {}
+            for head in headers:
+                data[head] = last_data[71:,dh2ind[head]] 
+
+            plot_trajectory(pred, label, data, 
+                    os.path.join(output_root, fname.replace('.pkl', '-{}.png'.format(label))))
+#
+#            pred_list.append(pred[-1])
+#            label_list.append(_label[-1])
+#            if step > 0 and step % 10 == 0:
+#                
+#                auc = get_auroc(label_list, pred_list)
+#                ap = get_ap(label_list, pred_list)
+#                print ('test auc: {:.3f}, ap: {:.3f}'.format(auc, ap))
+
+        #save_trajectory_data(model)
 
 
 

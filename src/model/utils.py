@@ -8,11 +8,19 @@ import sklearn.metrics as metrics
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
+import matplotlib
+import matplotlib.gridspec as gridspec
+from scipy.stats.stats import pearsonr
+import seaborn as sns
+
 
 import pdb
 
 FONT_SIZE = 20
 FONT_SIZE_TICK = 17
+matplotlib.use('Agg')
+#sns.set_context("seaborn")
+sns.set(style='darkgrid')
 
 
 class CustomDataset(Dataset):
@@ -152,6 +160,53 @@ def plot_pr_curve(fignum, label, prediction, legend=None, extra_legend='', clf=F
     plt.tight_layout()
 
     return recall, precision, ap_thr, ap
+
+
+
+def plot_trajectory(pred, label, data, savename):
+
+    color_list = sns.color_palette('dark')[:9]
+
+    fig = plt.figure(0, figsize=(14,14))
+    outer = gridspec.GridSpec(2,1, height_ratios=[1,1])
+    board1 = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[0])
+    board2 = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[1])
+
+    icu_id = savename.split('/')[-1].split('-')[0]
+
+    b1_axes = []
+    b1_axes.append(plt.subplot(board1[0]))
+    b1_axes[0].plot(pred, color='r', marker='o', markerfacecolor='None', markersize=4, label=label)
+    b1_axes[0].set_ylim(0,1)
+    b1_axes[0].legend(loc='upper left')
+    title = 'Prediction Trajectory: {}'.format(icu_id)
+    b1_axes[0].set_title(title)
+    b1_axes[0].set_ylabel('Prediction score')
+    b1_axes[0].set_xlabel('Time (hour)')
+
+    b2_axes = []
+    b2_axes.append(plt.subplot(board2[0]))
+    color_idx = 0
+    for head, seq in data.items():
+        b2_axes[0].plot(seq, color=color_list[color_idx], marker='o',
+                markerfacecolor='None', markersize=4, label=head)
+        color_idx += 1
+    b2_axes[0].legend(loc='upper left')
+    b2_axes[0].set_ylim(-2.5,2.5)
+    b2_axes[0].set_title('Signal values (standardized)')
+    b2_axes[0].set_xlabel('Time (hour)')
+
+    plt.tight_layout()
+    plt.savefig(savename)
+
+
+#    for cell in board1:
+#        b1_axes.append(plt.subplot(cell))
+#        [score_axes[-1].axvline(x=points[key], color='k', linewidth=2) for key in points.keys()]
+    
+
+
+
 
 
 if __name__=='__main__':

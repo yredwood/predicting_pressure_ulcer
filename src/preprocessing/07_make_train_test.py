@@ -19,6 +19,7 @@ DYNAMIC_HEADER = VITAL_SIGNS_HEADER + LAB_HEADER + ['Position Change', 'Pressure
 
 
 # headers from 06
+from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 HEADER = ['age_at_admission', 'CHF', 'Arrhy', 'VALVE', 'PULMCIRC',
           'PERIVASC', 'HTN', 'PARA', 'NEURO', 'CHRNLUNG', 'DM', 'HYPOTHY',
           'RENLFAIL', 'LIVER', 'ULCER', 'AIDS', 'LYMPH', 'METS', 'TUMOR',
@@ -50,11 +51,13 @@ if __name__=='__main__':
 
     # matching labels 
     dynamic, static, label = [], [], []
+    icu_ids = []
     for icu_id in sorted(dynamic_data['mats'].keys()):
 
         dynamic.append(dynamic_data['mats'][icu_id])
         static_icu_index = static_data['icustay_id'].index(icu_id)
         static.append([float(_s) for _s in static_data['xs'][static_icu_index]])
+        icu_ids.append(icu_id)
 
         if dynamic_data['ys'][icu_id] == 'case':
             label.append(1)
@@ -68,18 +71,18 @@ if __name__=='__main__':
 
     # normalize data
     xall = np.concatenate(dynamic, axis=0)
-    avg = np.mean(xall, 0)
-    std = np.std(xall, 0)
-    dynamic = np.array([(_x - avg) / (std+1e-8) for _x in dynamic])
+    dy_avg = np.mean(xall, 0)
+    dy_std = np.std(xall, 0)
+    dynamic = np.array([(_x - dy_avg) / (dy_std+1e-8) for _x in dynamic])
 
     # for static, only normalize non-categorical features
     # >>>>> also normalize categorical variables
     static = np.array(static)
-    avg = np.mean(static, 0)
-    std = np.std(static, 0)
+    st_avg = np.mean(static, 0)
+    st_std = np.std(static, 0)
     for i in range(len(static[0])):
         #if not static_data['cs'][i]:
-        static[:,i] = (static[:,i] - avg[i]) / (std[i] + 1e-8)
+        static[:,i] = (static[:,i] - st_avg[i]) / (st_std[i] + 1e-8)
 
     # split train-val-test datasets
     split_idx = int(len(dynamic) * testset_ratio)
@@ -96,6 +99,8 @@ if __name__=='__main__':
     test_xd = [dynamic[_i] for _i in tei]
     test_xs = [static[_i] for _i in tei]
     test_y = [label[_i] for _i in tei]
+
+    test_icuid = [icu_ids[_i] for _i in tei]
     
     # test - valid split
     valid_xd = test_xd[len(tei)//2:]
@@ -158,6 +163,11 @@ if __name__=='__main__':
         'static_header': STATIC_HEADER,
         'dh2ind': dh2ind,
         'sh2ind': sh2ind,
+        'dynamic_avg': dy_avg,
+        'dynamic_std': dy_std,
+        'static_avg': st_avg,
+        'static_std': st_std,
+        'test_icuid': test_icuid,
     }
 
     # save datasets
