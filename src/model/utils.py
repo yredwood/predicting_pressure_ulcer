@@ -63,8 +63,6 @@ class CustomDataset(Dataset):
         return self.dynamic[idx], self.static[idx], self.label[idx]
 
 
-
-
 def collate_fn(batch):
 #    dynamic_max_len = max([len(d[0]) for d in batch])
     # sort by length

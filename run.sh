@@ -2,7 +2,7 @@
 
 gpu=0
 #ex=SBP,DBP,SaO2,BRANDEN_SCORE,sensory_perception,moisture,activity,mobility,nutrition,friction_shear
-ex=SBP,DBP,SaO2,BRANDEN_SCORE
+#ex=SBP,DBP,SaO2,BRANDEN_SCORE
 end=9
 #for ((i=0;i<=${end};i=i+1)); do
 #    echo --------  $i th iteration
@@ -21,10 +21,10 @@ end=9
 
 
 # debugging
-python src/preprocessing/07_make_train_test.py 0
-CUDA_VISIBLE_DEVICES=0 python src/model/pytorch-lstm.py \
-    --seed 0 --model-type MLP --max-epoch 5 --trajectory 1 
+#python src/preprocessing/07_make_train_test.py 0
+#CUDA_VISIBLE_DEVICES=0 python src/model/pytorch-lstm.py \
+#    --seed 0 --model-type MLP --max-epoch 5 --trajectory 1 
 
 # feature importance
-#python src/preprocessing/07_make_train_test.py 5
+python src/preprocessing/07_make_train_test.py 5
 #python src/model/pytorch-lstm.py --seed 0 --model-type MLP --max-epoch 1 --exclude-feature $ex
