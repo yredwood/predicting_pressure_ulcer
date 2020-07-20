@@ -45,6 +45,8 @@ if __name__=='__main__':
     plot_args = {'lw': 1, 'alpha': 0.9, 'color': 'black', 'ls': '-'}
     preds = np.concatenate(preds, axis=0)
     trues = np.concatenate(trues, axis=0)
+    import pdb
+    pdb.set_trace()
     
     aucstr = '{} AUC: {:.3f} ({:.3f})'.format(model, np.mean(aucs), np.std(aucs))
     apstr = '{} AP: {:.3f} ({:.3f})'.format(model, np.mean(aps), np.std(aucs))
@@ -61,6 +63,8 @@ if __name__=='__main__':
     # feature importance ::
     flist = [os.path.join(root_dir, _dir) for _dir in os.listdir(root_dir) \
             if 'feature_importance' in _dir]
+    if len(flist) == 0:
+        exit()
 
     feature_importance = []
     for fname in flist:

@@ -96,11 +96,11 @@ def plot_roc_curve(fignum, label, prediction, legend=None, **kwargs):
 
     if legend is not None:
         ax.plot(fpr, tpr, lw=lw, alpha=alpha, color=color, linestyle=ls,
-                label=legend,
-                linewidth=3)
+                label=legend)
+                #linewidth=3)
                 #label='{} (AUC={:.3f})'.format(legend, auc),
     else:
-        ax.plot(fpr, tpr, lw=lw, alpha=alpha, color=color, linewidth=3, linestyle=ls)
+        ax.plot(fpr, tpr, lw=lw, alpha=alpha, color=color, linestyle=ls)
 
     ax.set_xlim([-0.05, 1.05])
     ax.set_ylim([-0.05, 1.05])
@@ -141,12 +141,12 @@ def plot_pr_curve(fignum, label, prediction, legend=None, extra_legend='', clf=F
         ax.clf()
     if legend is not None:
         ax.step(recall, precision, lw=lw, alpha=alpha, color=color, linestyle=ls,
-                label=legend,
-                linewidth=3)
+                label=legend)
+                #linewidth=3)
                  #label='{} (AP={:.3f}{})'.format(legend, ap, extra_legend),
     else:
-        ax.step(recall, precision, lw=lw, alpha=alpha, color=color, linestyle=ls,
-                 linewidth=3)
+        ax.step(recall, precision, lw=lw, alpha=alpha, color=color, linestyle=ls)
+                 #linewidth=3)
 
     ax.set_xlim([-0.05, 1.05])
     ax.set_ylim([-0.05, 1.05])

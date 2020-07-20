@@ -383,7 +383,6 @@ if __name__=='__main__':
         feature_importance(model, logging=True)
 
 
-
     if args.trajectory:
         data_root = os.path.join(args.dataset_root, '09_timeline_data')
         output_root = os.path.join(args.output_root, 'trajectory')

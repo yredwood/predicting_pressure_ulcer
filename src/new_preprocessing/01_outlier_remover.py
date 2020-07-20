@@ -77,7 +77,7 @@ RANGE_S = {
 '''
 
 input_root = './input_datasets'
-input_fname = os.path.join(input_root, 'LAB_CHART_EVENTS_TABLE_sampled.csv')
+input_fname = os.path.join(input_root, 'LAB_CHART_EVENTS_TABLE.csv')
 
 output_root = './datasets'
 if not os.path.exists(output_root):

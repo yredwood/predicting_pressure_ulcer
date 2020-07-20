@@ -32,8 +32,8 @@ from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 LAB_HEADER = LAB_HEADER + ['Position Change', 'Pressure Reducing Device']
 
 dir_path = './datasets'
-input_fname = os.path.join(dir_path, '03_add_position_features.csv')
-output_fname = os.path.join(dir_path, '04_to_numpyarray.pkl')
+input_fname = os.path.join(dir_path, '04_imputing.csv')
+output_fname = os.path.join(dir_path, '05_converter.pkl')
 
 def main():
     records = read_csv(input_fname)

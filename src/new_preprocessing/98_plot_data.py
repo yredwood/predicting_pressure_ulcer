@@ -12,12 +12,15 @@ from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 '''
 plot per-case time-line data with all of dynamic features
 '''
-
+import matplotlib
+matplotlib.use('Agg')
 
 LAB_HEADER = LAB_HEADER + ['Position Change', 'Pressure Reducing Device']
 
 data_root = './datasets'
-input_fname = os.path.join(data_root, '03_add_position_features.csv')
+#input_fname = os.path.join(data_root, '03_add_position_features.csv')
+input_fname = os.path.join(data_root, '04_imputing.csv')
+print ('plot data from {}...'.format(input_fname))
 
 output_root = os.path.join(data_root, '98_plot_data')
 if not os.path.exists(output_root):
@@ -39,7 +42,7 @@ def plot(xs, ys, headers, fname):
     
     plt.tight_layout()
     print ('writing {}...'.format(fname))
-    plt.savefig(os.path.join(output_root, fname + '.png'))
+    plt.savefig(os.path.join(output_root, fname))
 
 
 def main():

@@ -11,7 +11,6 @@ data_dir = './datasets'
 input_fname = os.path.join(data_dir, '02_time_averaging.csv')
 output_fname = os.path.join(data_dir, '03_add_position_features.csv')
 
-
 input_dir = './input_datasets'
 
 strptime_m = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
