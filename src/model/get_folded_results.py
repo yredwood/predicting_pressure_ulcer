@@ -45,8 +45,6 @@ if __name__=='__main__':
     plot_args = {'lw': 1, 'alpha': 0.9, 'color': 'black', 'ls': '-'}
     preds = np.concatenate(preds, axis=0)
     trues = np.concatenate(trues, axis=0)
-    import pdb
-    pdb.set_trace()
     
     aucstr = '{} AUC: {:.3f} ({:.3f})'.format(model, np.mean(aucs), np.std(aucs))
     apstr = '{} AP: {:.3f} ({:.3f})'.format(model, np.mean(aps), np.std(aucs))

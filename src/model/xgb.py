@@ -28,6 +28,7 @@ def parse_args():
     parser.add_argument('--model-type', default='MLP')
     parser.add_argument('--exclude-feature', default='')
     parser.add_argument('--output-root', default='results')
+    parser.add_argument('--dataset-root', default='datasets/')
     args = parser.parse_args()
     return args
 
@@ -52,13 +53,13 @@ if __name__ == '__main__':
     )
     exclude = args.exclude_feature.split(',')
 
-    train_dataset = CustomDataset('./datasets', 'train_data.pkl', exclude)
-    valid_dataset = CustomDataset('./datasets', 'valid_data.pkl', exclude)
-    test_dataset = CustomDataset('./datasets', 'test_data.pkl', exclude)
+    train_dataset = CustomDataset(args.dataset_root, 'train_data.pkl', exclude)
+    valid_dataset = CustomDataset(args.dataset_root, 'valid_data.pkl', exclude)
+    test_dataset = CustomDataset(args.dataset_root, 'test_data.pkl', exclude)
 
-    dtrain = xgb.DMatrix(train_dataset.static, label=train_dataset.label)
-    dvalid = xgb.DMatrix(valid_dataset.static, label=valid_dataset.label)
-    dtest  = xgb.DMatrix(test_dataset.static, label=test_dataset.label)
+    dtrain = xgb.DMatrix(np.array(train_dataset.static), label=train_dataset.label)
+    dvalid = xgb.DMatrix(np.array(valid_dataset.static), label=valid_dataset.label)
+    dtest  = xgb.DMatrix(np.array(test_dataset.static), label=test_dataset.label)
 
     evallist = [(dvalid, 'eval'), (dtrain, 'train')]
     bst = xgb.train(param, dtrain, 10, evallist)

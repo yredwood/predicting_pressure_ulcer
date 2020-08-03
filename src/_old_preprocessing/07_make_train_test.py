@@ -17,7 +17,6 @@ upsample = 1 # 1 to keep original ratio
 # headers from 05
 DYNAMIC_HEADER = VITAL_SIGNS_HEADER + LAB_HEADER + ['Position Change', 'Pressure Reducing Device']
 
-
 # headers from 06
 from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 HEADER = ['age_at_admission', 'CHF', 'Arrhy', 'VALVE', 'PULMCIRC',
@@ -34,7 +33,6 @@ def read_pkl(fname):
     with open(fname, 'rb') as f:
         data = pickle.load(f)
     return data 
-
 
 if __name__=='__main__':
     try:
@@ -157,7 +155,6 @@ if __name__=='__main__':
     for i, h in enumerate(STATIC_HEADER):
         sh2ind[h] = [len(DYNAMIC_HEADER) * 4 + i]
 
-    
     meta_data = {
         'dynamic_header': DYNAMIC_HEADER,
         'static_header': STATIC_HEADER,

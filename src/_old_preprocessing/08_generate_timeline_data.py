@@ -61,8 +61,6 @@ if __name__=='__main__':
     _icd_fname = os.path.join(input_root, 'icd_code.csv')
     _meta_fname = os.path.join(dir_path, 'meta_data.pkl')
 
-    
-
     dynamic_data = read_pkl(_05_fname)
     meta_data = read_pkl(_meta_fname)
     icd_codes = read_csv(_icd_fname)
@@ -113,7 +111,6 @@ if __name__=='__main__':
 
             static_feat = np.concatenate((avg, std, max_val, min_val, icd_code))
             static_feat = np.array([float(_s) for _s in static_feat])
-
 
             # standardization
             avg = meta_data['dynamic_avg']

@@ -22,6 +22,7 @@ HEADER = ['age_at_admission', 'CHF', 'Arrhy', 'VALVE', 'PULMCIRC',
           'ARTH', 'COAG', 'OBESE', 'WGHTLOSS', 'LYTES', 'BLDLOSS', 'ANEMDEF',
           'ALCOHOL', 'DRUG', 'PSYCH', 'DEPRESS']  # zero-one values
 
+ADD_HEADER = ['TOS']
 STR_HEADER = ['Gender', 'Race2', 'Insurance2'] 
 STR_HEADER_CLASS = [['F', 'M'], 
         ['Non-WHITE', 'WHITE'],
@@ -66,6 +67,7 @@ def main():
         assert len(icd_code) == 1
         _icd_code = icd_code[0]
         icd_code = [_icd_code[name] for name in HEADER]
+        icd_code += [str(data.shape[0])]
         for _i in range(len(STR_HEADER)-1):
             # only for gender and race
             c = STR_HEADER_CLASS[_i].index(_icd_code[STR_HEADER[_i]])

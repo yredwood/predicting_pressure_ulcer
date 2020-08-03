@@ -8,6 +8,7 @@ import pickle
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
+import torch.nn.functional as F
 import torch.optim as optim
 from utils import CustomDataset
 from utils import collate_fn
@@ -26,7 +27,7 @@ def parse_args():
     parser.add_argument('--batch-size', default=32, type=int)
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--max-epoch', default=30, type=int)
-    parser.add_argument('--learning-rate', default=0.001, type=float)
+    parser.add_argument('--learning-rate', default=0.01, type=float)
     parser.add_argument('--model-type', default='MLP')
     parser.add_argument('--exclude-feature', default='')
     parser.add_argument('--output-root', default='results')
@@ -35,7 +36,6 @@ def parse_args():
     parser.add_argument('--trajectory', default=0)
     args = parser.parse_args()
     return args
-
 
 # =================================
 
@@ -69,14 +69,23 @@ class VTonly(nn.Module): # vital only
 class MLP(nn.Module):
     def __init__(self, name='MLP', seed=0, static_dim=0):
         super().__init__()
+        
+        inter_dim = 128
+#        self.net = nn.Sequential(
+#            nn.Linear(static_dim, inter_dim),
+#            nn.ReLU(),
+#            nn.Linear(inter_dim, inter_dim),
+#            nn.ReLU(),
+#            nn.Linear(inter_dim, 1),
+#            nn.Sigmoid(),
+#        )
 
-        self.net = nn.Sequential(
-            nn.Linear(static_dim, 128),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(128, 1),
-            nn.Sigmoid(),
+        self.num_layers = 2
+        self.pre = nn.Linear(static_dim, inter_dim)
+        self.inter = nn.ModuleList(
+                [nn.Linear(inter_dim, inter_dim) for _ in range(self.num_layers)]
         )
+        self.final = nn.Linear(inter_dim, 1)
 
         self.name = name
         self.seed = seed
@@ -87,8 +96,20 @@ class MLP(nn.Module):
             else:
                 param.data.uniform_(-0.1, 0.1)
 
-    def forward(self, xd, xs, xlen=None):
-        return self.net(xs)
+    def forward(self, xd, xs, xlen=None, final_act=True):
+        out = F.relu(self.pre(xs))
+
+        for layer in self.inter:
+            prev = out
+            out = layer(out)
+            out = F.relu(out) + prev
+        
+        out = self.final(out)
+        if final_act:
+            out = F.sigmoid(out)
+        return out
+
+#        return self.net(xs)
 
 class LSTM(nn.Module):
 
@@ -98,15 +119,18 @@ class LSTM(nn.Module):
         self.seed = seed
         
         lstm_hdim = 32
-        mlp_hdim = 128
+        mlp_hdim = 64
 
         self.lstm = nn.LSTM(dynamic_dim, lstm_hdim, batch_first=True)
-        self.mlp = nn.Sequential(
-                nn.Linear(static_dim, mlp_hdim),
-                nn.ReLU(),
-                nn.Dropout(0.5),
-        )
-        self.dense = nn.Linear(lstm_hdim+mlp_hdim, 1)
+        self.lstm_post = nn.Linear(lstm_hdim, 1)
+#        self.mlp = nn.Sequential(
+#                nn.Linear(static_dim, mlp_hdim),
+#                nn.ReLU(),
+#                nn.Linear(mlp_hdim, mlp_hdim),
+#                nn.ReLU(),
+#                nn.Linear(mlp_hdim, 1),
+#        )
+        self.mlp = MLP(seed=seed, static_dim=static_dim)
         self.act = nn.Sigmoid()
 
         for name, param in self.named_parameters():
@@ -118,13 +142,13 @@ class LSTM(nn.Module):
     def forward(self, xd, xs, xlen=None):
         xd = nn.utils.rnn.pack_padded_sequence(xd, xlen, batch_first=True)
         x, h = self.lstm(xd)
-        x, xlen = nn.utils.rnn.pad_packed_sequence(x, batch_first=True)
-
+        #x, xlen = nn.utils.rnn.pad_packed_sequence(x, batch_first=True)
         # get the final status
-        lstm_out = torch.stack([x[i,xlen[i]-1] for i in range(x.shape[0])])
-        mlp_out = self.mlp(xs)
-        out = torch.cat((lstm_out, mlp_out), axis=1)
-        out = self.act(self.dense(out))
+        #lstm_out = torch.stack([x[i,xlen[i]-1] for i in range(x.shape[0])])
+        lstm_out = self.lstm_post(h[0][0])
+
+        mlp_out = self.mlp(xd, xs, final_act=False)
+        out = self.act(mlp_out + lstm_out)
         return out
 
 
@@ -187,7 +211,6 @@ def test_epoch(model, iterator, criterion=None, logging=False, get_prediction=Fa
         vals_fname = os.path.join(model.name, 'preds_labels_{}.pkl'.format(model.seed))
         with open(vals_fname, 'wb') as f:
             pickle.dump((eval_pred, eval_true), f)
-        
 
     return np.mean(eval_loss), auc, ap
 
@@ -223,12 +246,10 @@ def feature_importance(model, logging=True):
             error_auc.append( ((1-auc) - (1-ref_auc)) / (1-ref_auc) )
             error_ap.append( ((1-ap) - (1-ref_ap)) / (1-ref_ap) )
 
-
         # sorted printing
         sorted_idx = np.argsort(error_auc)
         for i in reversed(sorted_idx):
             print ('{:15s} : {:.3f}'.format(static_feature_list[i], error_auc[i]))
-            
         
         output_data = {'header': static_feature_list,
                 'feature_importance': error_auc}
@@ -352,8 +373,7 @@ if __name__=='__main__':
     elif model_type == 'LSTM':
         model = LSTM(name, args.seed, dynamic_dim, static_dim).cuda()
 
-
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-3)
     criterion = nn.BCELoss()
     
     best_loss = 10000.
@@ -361,6 +381,14 @@ if __name__=='__main__':
 
         train_loss = train_epoch(model, train_loader, optimizer, criterion)
         valid_loss, valid_auc, valid_ap = test_epoch(model, valid_loader, criterion)
+
+        if epoch == int(max_epoch * 0.4):
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = learning_rate * 0.1
+        if epoch == int(max_epoch * 0.75):
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = learning_rate * 0.01
+            
 
         print ('Epoch {:4d} | train_loss: {:.4f}, valid_loss: {:.4f},  '
                 'AUC: {:.4f},  AP: {:.4f}'.format(

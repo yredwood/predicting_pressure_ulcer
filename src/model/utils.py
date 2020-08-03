@@ -38,7 +38,6 @@ class CustomDataset(Dataset):
         self.dynamic_dim = self.dynamic[0].shape[-1]
         self.static_dim = self.static[0].shape[-1]
 
-        
         # load meta-data
         path = os.path.join(dataset_root, 'meta_data.pkl')
         with open(path, 'rb') as f:
@@ -49,12 +48,18 @@ class CustomDataset(Dataset):
         for head in exclude_feature_list:
             if head in self.meta_data['dh2ind'].keys():
                 self.exd.extend(self.meta_data['dh2ind'][head])
+            else:
+                print ('wrong excluding param: {}'.format(head))
+
             if head in self.meta_data['sh2ind'].keys():
                 self.exs.extend(self.meta_data['sh2ind'][head])
+            else:
+                print ('wrong excluding param: {}'.format(head))
         
         for i in range(len(self)):
             self.dynamic[i][:,self.exd] = 0.
             self.static[i][self.exs] = 0.
+
 
     def __len__(self):
         return len(self.dynamic)

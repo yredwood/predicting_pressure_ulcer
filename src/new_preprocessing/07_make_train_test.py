@@ -17,14 +17,13 @@ upsample = 1 # 1 to keep original ratio
 # headers from 05
 DYNAMIC_HEADER = VITAL_SIGNS_HEADER + LAB_HEADER + ['Position Change', 'Pressure Reducing Device']
 
-
 # headers from 06
 from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 HEADER = ['age_at_admission', 'CHF', 'Arrhy', 'VALVE', 'PULMCIRC',
           'PERIVASC', 'HTN', 'PARA', 'NEURO', 'CHRNLUNG', 'DM', 'HYPOTHY',
           'RENLFAIL', 'LIVER', 'ULCER', 'AIDS', 'LYMPH', 'METS', 'TUMOR',
           'ARTH', 'COAG', 'OBESE', 'WGHTLOSS', 'LYTES', 'BLDLOSS', 'ANEMDEF',
-          'ALCOHOL', 'DRUG', 'PSYCH', 'DEPRESS']  # zero-one values
+          'ALCOHOL', 'DRUG', 'PSYCH', 'DEPRESS', 'TOS']  # zero-one values
 
 STR_HEADER = ['Gender', 'Race2', 'Private Insurance', 'Public Insurance']
 STATIC_HEADER = HEADER + STR_HEADER
@@ -135,14 +134,18 @@ if __name__=='__main__':
             'xs': valid_xs,
             'y': valid_y,
     }
+
+    output_root = os.path.join(dir_path, 'seed_{}'.format(seed_num))
+    if not os.path.exists(output_root):
+        os.makedirs(output_root)
             
-    with open(os.path.join(dir_path, 'train_data.pkl'), 'wb') as f:
+    with open(os.path.join(output_root, 'train_data.pkl'), 'wb') as f:
         pickle.dump(train_data, f)
 
-    with open(os.path.join(dir_path, 'test_data.pkl'), 'wb') as f:
+    with open(os.path.join(output_root, 'test_data.pkl'), 'wb') as f:
         pickle.dump(test_data, f)
 
-    with open(os.path.join(dir_path, 'valid_data.pkl'), 'wb') as f:
+    with open(os.path.join(output_root, 'valid_data.pkl'), 'wb') as f:
         pickle.dump(valid_data, f)
         
     # define header: index dictionary
@@ -170,7 +173,7 @@ if __name__=='__main__':
     }
 
     # save datasets
-    with open(os.path.join(dir_path, 'meta_data.pkl'), 'wb') as f:
+    with open(os.path.join(output_root, 'meta_data.pkl'), 'wb') as f:
         pickle.dump(meta_data, f)
 
 
