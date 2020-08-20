@@ -6,7 +6,6 @@ import sys
 from headers import INFO_HEADER, VITAL_SIGNS_HEADER, LAB_HEADER
 import pdb
 
-
 dir_path = './datasets'
 testset_ratio = 0.40
 upsample = 1 # 1 to keep original ratio
@@ -23,7 +22,7 @@ HEADER = ['age_at_admission', 'CHF', 'Arrhy', 'VALVE', 'PULMCIRC',
           'PERIVASC', 'HTN', 'PARA', 'NEURO', 'CHRNLUNG', 'DM', 'HYPOTHY',
           'RENLFAIL', 'LIVER', 'ULCER', 'AIDS', 'LYMPH', 'METS', 'TUMOR',
           'ARTH', 'COAG', 'OBESE', 'WGHTLOSS', 'LYTES', 'BLDLOSS', 'ANEMDEF',
-          'ALCOHOL', 'DRUG', 'PSYCH', 'DEPRESS', 'TOS']  # zero-one values
+          'ALCOHOL', 'DRUG', 'PSYCH', 'DEPRESS', 'LOT']  # zero-one values
 
 STR_HEADER = ['Gender', 'Race2', 'Private Insurance', 'Public Insurance']
 STATIC_HEADER = HEADER + STR_HEADER

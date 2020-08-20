@@ -7,17 +7,17 @@ for ((i=0;i<=${end};i=i+1)); do
     echo --------  $i th iteration
 #    python src/model/pytorch-lstm.py --seed $i --exclude-feature $ex --model-type LSTM --max-epoch 15
 #    python src/new_preprocessing/07_make_train_test.py $i
-#    CUDA_VISIBLE_DEVICES=$gpu python src/model/pytorch-lstm.py --seed $i \
-#        --dataset-root datasets/seed_${i} \
-#        --exclude-feature $ex --model-type MLP --max-epoch 15 
-#        --feature-importance 1
+    CUDA_VISIBLE_DEVICES=$gpu python src/model/pytorch-lstm.py --seed $i \
+        --dataset-root datasets/seed_${i} \
+        --exclude-feature $ex --model-type MLP --max-epoch 15 
+        --feature-importance 1
 #
 #    CUDA_VISIBLE_DEVICES=$gpu python src/model/pytorch-lstm.py --seed $i \
 #        --exclude-feature $ex --model-type LSTM --max-epoch 10  \
 #        --feature-importance 1
 
 #    python src/model/pytorch-lstm.py --seed $i --exclude-feature $ex --model-type VTonly --max-epoch 10 
-#    python src/model/xgb.py --seed $i --exclude-feature $ex --model-type XGB --dataset-root datasets/seed_${i}
+    python src/model/xgb.py --seed $i --exclude-feature $ex --model-type XGB --dataset-root datasets/seed_${i}
 done
 
 

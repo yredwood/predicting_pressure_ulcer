@@ -24,7 +24,7 @@ sns.set(style='darkgrid')
 
 
 class CustomDataset(Dataset):
-    def __init__(self, dataset_root, dset_type, exclude_feature_list=[]):
+    def __init__(self, dataset_root, dset_type, exclude_feature_list=[], exclude_all_type=None):
 
         # load train or test dataset
         self.path = os.path.join(dataset_root, dset_type)
@@ -43,22 +43,55 @@ class CustomDataset(Dataset):
         with open(path, 'rb') as f:
             self.meta_data = pickle.load(f)
 
+        self.print_stats()
+
         #exclude_feature_list = ['DBP', 'SBP']
         self.exd, self.exs = [], []
         for head in exclude_feature_list:
             if head in self.meta_data['dh2ind'].keys():
                 self.exd.extend(self.meta_data['dh2ind'][head])
             else:
-                print ('wrong excluding param: {}'.format(head))
+                pass
+                #print ('wrong excluding param: {}'.format(head))
 
             if head in self.meta_data['sh2ind'].keys():
                 self.exs.extend(self.meta_data['sh2ind'][head])
             else:
-                print ('wrong excluding param: {}'.format(head))
+                pass
+                #print ('wrong excluding param: {}'.format(head))
         
         for i in range(len(self)):
             self.dynamic[i][:,self.exd] = 0.
             self.static[i][self.exs] = 0.
+
+        
+        #exclude_all_type = 'static'
+        sth = ','.join([head for head in self.meta_data['static_header']])
+        dyh = ','.join([head for head in self.meta_data['dynamic_header']])
+
+        if exclude_all_type is not None:
+            if exclude_all_type == 'static':
+                self.exs = []
+                for head in self.meta_data['static_header']:
+                    if head in self.meta_data['sh2ind'].keys():
+                        self.exs.extend(self.meta_data['sh2ind'][head])
+                
+                for i in range(len(self)):
+                    self.static[i][self.exs] = 0.
+            if exclude_all_type == 'dynamic':
+                self.exd = []
+                self.exs = []
+                for head in self.meta_data['dynamic_header']:
+                    if head in self.meta_data['sh2ind'].keys():
+                        self.exs.extend(self.meta_data['sh2ind'][head])
+
+                    if head in self.meta_data['dh2ind'].keys():
+                        self.exd.extend(self.meta_data['dh2ind'][head])
+
+                for i in range(len(self)):
+                    self.static[i][self.exs] = 0.
+                    self.dynamic[i][:,self.exd] = 0.
+
 
 
     def __len__(self):
@@ -66,6 +99,44 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.dynamic[idx], self.static[idx], self.label[idx]
+
+    def print_stats(self):
+        
+        # print dynamic params
+        import pdb
+
+        d_header = self.meta_data['dynamic_header']
+        s_header = self.meta_data['static_header']
+
+        d_avg, d_std = self.meta_data['dynamic_avg'], self.meta_data['dynamic_std']
+        s_avg, s_std = self.meta_data['static_avg'], self.meta_data['static_std']
+
+        index = 0 
+        print ('==== Dynamic input statistics ====')
+        for key, value in self.meta_data['dh2ind'].items():
+            print ('{:5d}. {:20s}: {:10.4f}, {:10.4f}'.format(
+                index, key, d_avg[value[0]], d_std[value[0]]))
+            index += 1
+
+
+        print ('==== Static input statistics ====')
+        print ('min, max, mean, std')
+        for key, value in self.meta_data['sh2ind'].items():
+            
+            if len(value) > 1:
+                pass
+            else:
+                print ('{:5d}. {:20s}: {:10.4f}, {:10.4f}'.format(
+                    index, key, s_avg[value[0]], s_std[value[0]]))
+                index += 1
+                    
+
+
+
+        pdb.set_trace()
+        
+        pass
+
 
 
 def collate_fn(batch):

@@ -352,7 +352,7 @@ if __name__=='__main__':
 
     train_dataset = CustomDataset(args.dataset_root, 'train_data.pkl', exclude)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
-            num_workers=10, drop_last=True, collate_fn=collate_fn)
+            num_workers=2, drop_last=True, collate_fn=collate_fn)
 
     test_dataset = CustomDataset(args.dataset_root, 'test_data.pkl', exclude)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
@@ -365,12 +365,11 @@ if __name__=='__main__':
     dynamic_dim = train_dataset.dynamic_dim
     static_dim = train_dataset.static_dim
 
-
-    if model_type == 'MLP':
+    if 'MLP' in model_type:
         model = MLP(name, args.seed, static_dim).cuda()
-    elif model_type == 'VTonly':
+    elif 'VTonly' in model_type:
         model = VTonly(name, args.seed, dynamic_dim).cuda()
-    elif model_type == 'LSTM':
+    elif 'LSTM' in model_type :
         model = LSTM(name, args.seed, dynamic_dim, static_dim).cuda()
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-3)

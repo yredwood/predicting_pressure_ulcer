@@ -45,17 +45,20 @@ if __name__=='__main__':
     plot_args = {'lw': 1, 'alpha': 0.9, 'color': 'black', 'ls': '-'}
     preds = np.concatenate(preds, axis=0)
     trues = np.concatenate(trues, axis=0)
-    
-    aucstr = '{} AUC: {:.3f} ({:.3f})'.format(model, np.mean(aucs), np.std(aucs))
-    apstr = '{} AP: {:.3f} ({:.3f})'.format(model, np.mean(aps), np.std(aucs))
+
+    auc_cint = np.std(aucs) / np.sqrt(len(aucs)) * 1.96
+    ap_cint = np.std(aps) / np.sqrt(len(aps)) * 1.96
+
+    aucstr = '{} AUC: {:.4f} ({} {:.4f})'.format(model, np.mean(aucs), u"\u00B1", auc_cint)
+    apstr = '{} AP: {:.4f} ({} {:.4f})'.format(model, np.mean(aps), u"\u00B1", ap_cint)
     plot_roc_curve(0, trues, preds, legend=aucstr, **plot_args)
     plt.savefig( os.path.join(root_dir, 'auc') )
     plot_pr_curve(1, trues, preds, legend=apstr, **plot_args)
     plt.savefig( os.path.join(root_dir, 'pr') )
         
     print ('Results for {} model:: {} repetition'.format(model, len(flist)))
-    print ('AUC: {:.3f} ({:.3f})'.format(np.mean(aucs), np.std(aucs)))
-    print ('AP: {:.3f} ({:.3f})'.format(np.mean(aps), np.std(aps)))
+    print ('AUC: {:.4f} ({:.4f})'.format(np.mean(aucs), auc_cint))
+    print ('AP: {:.4f} ({:.4f})'.format(np.mean(aps), ap_cint))
 
 
     # feature importance ::
@@ -78,7 +81,7 @@ if __name__=='__main__':
     output_string = []
     for i in reversed(sorted_idx):
         output = '{:20s} : {:.3f} ({:.3f})'.format(header[i], mean[i], std[i])
-        print (output)
+        #print (output)
         output_string.append(output)
         
     fname = os.path.join(root_dir, 'fi.txt')

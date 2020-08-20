@@ -80,6 +80,49 @@ if __name__ == '__main__':
     print ('AUC: {:.3f}, AP: {:.3f}'.format(auc, ap))
 
 
+    get_feature_importance = True
+    if get_feature_importance:
+        ref_auc = get_auroc(test_dataset.label, pred)
+        ref_ap = get_ap(test_dataset.label, pred)
+        
+        static_feature_list = list(sorted(test_dataset.meta_data['sh2ind'].keys()))
+        error_auc, error_ap = [], []
+        for permute_feature in static_feature_list:
+            dataset = CustomDataset(args.dataset_root, 'test_data.pkl', exclude)
+            static_idx = dataset.meta_data['sh2ind'][permute_feature]
+            perm_idx = np.random.permutation(len(dataset))
+            new_static = dataset.static.copy()
+            for i in range(len(test_dataset)):
+                new_static[i][static_idx] = test_dataset.static[perm_idx[i]][static_idx]
+            dataset.static = new_static
+        
+            dtest  = xgb.DMatrix(np.array(dataset.static), label=dataset.label)
+            pred = bst.predict(dtest)
+            auc = get_auroc(dataset.label, pred)
+            ap = get_ap(dataset.label, pred)
+
+            error_auc.append( ((1-auc) - (1-ref_auc)) / (1-ref_auc) )
+            error_ap.append( ((1-ap) - (1-ref_ap)) / (1-ref_ap) )
+        
+        sorted_idx = np.argsort(error_auc)
+        for i in reversed(sorted_idx):
+            print ('{:15s} : {:.3f}'.format(static_feature_list[i], error_auc[i]))
+
+        output_data = {'header': static_feature_list, 
+                'feature_importance': error_auc}
+
+        output_root = os.path.join(args.output_root, 'XGB')
+        if not os.path.exists(output_root):
+            os.makedirs(output_root)
+        output_fname = os.path.join(output_root, 'feature_importance_{}.pkl'.format(args.seed))
+        with open(output_fname, 'wb') as f:
+            pickle.dump(output_data, f)
+
+
+            
+
+
+
 
 #FONT_SIZE = 20
 #FONT_SIZE_TICK = 17
