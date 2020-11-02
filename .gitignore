@@ -1,3 +1,5 @@
 input_datasets/*
 datasets/*
 results/*
+dataset/*
+preprocessed/*
