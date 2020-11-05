@@ -4,7 +4,7 @@ import pandas as pd
 import pdb
 from tqdm import tqdm
 from joblib import Parallel, delayed
-
+from datetime import datetime
 
 def tsv_to_csv(fname, output_fname):
     df = pd.read_csv(fname, sep='\t', header=None)
@@ -55,7 +55,13 @@ def hashing(csv_fname, key, chunksize=100000, dtypes=None, num_workers=10):
         records=df_chunk,
         key=key) for df_chunk in tqdm(pd.read_csv(csv_fname, dtype=dtypes, chunksize=chunksize)))
 
-    pdb.set_trace()
+    overlapped_keys = []
+    for r in results:
+        for key in r.keys():
+            if key not in overlapped_keys:
+                overlapped_keys.append(key)
+            else:
+                print (key)
 
 strptime_s = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
 strptime_m = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
@@ -67,14 +73,17 @@ def strptime(x):
     
 def _test_hashing(csv_fname, output_fname=None):
     from constants import DTYPES
+    import time
+    s0 = time.time()
     #data = pd.read_csv(csv_fname, dtype=DTYPES)
-    recordss = hashing(csv_fname, 'ICUSTAY_ID', dtypes=DTYPES, num_workers=20)
-    icu_ids = [str(r) for r in recordss.keys()]
-    # save it
-    if output_fname is not None:
-        with open(output_fname, 'wt') as f:
-            f.writelines('\n'.join(icu_ids))
+    recordss = hashing(csv_fname, 'ICUSTAY_ID', dtypes=DTYPES, num_workers=40)
+#    icu_ids = [str(r) for r in recordss.keys()]
+#    # save it
+#    if output_fname is not None:
+#        with open(output_fname, 'wt') as f:
+#            f.writelines('\n'.join(icu_ids))
         
+    print ('elapsed time: ', s0 - time.time())
 
 if __name__ == '__main__':
 #    input_fname = '/home/mike/codes/predicting_pressure_ulcer/dataset/1026/MIMIC_extracted.tsv'
