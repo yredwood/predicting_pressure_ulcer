@@ -1,67 +1,9 @@
 from openpyxl import load_workbook
-from constants import DTYPES
+from constants import DTYPES, HEADER
 import pandas as pd
 import pdb
-
-HEADER = [
-    'HADM_ID',
-    'ICUSTAY_ID', 
-    'START_TIME', 
-    'END_TIME',
-    'SORETIME',
-    'EVENTTIME',
-    'DBP',
-    'MBP',
-    'SBP',
-    'activity',
-    'friction/shear',
-    'mobility',
-    'moisture',
-    'nutrition',
-    'sensory/perception',
-    'gcs-eyeopening',
-    'gcs-motorresponse',
-    'gcs-verbalresponse',
-    'HR',
-    'SaO2',
-    'SpO2',
-    'RR',
-    'temperature',
-    'ph/bloodgas',
-    'pO2/bloodgas',
-    'pCO2/bloodgas',
-    'Bicarbonate',
-    'CalculatedBicarbonate',
-    'Hemoglobin (hematology)',
-    'Hemoglobin (blood gas)',
-    'Hematocrit',
-    'CalculatedHematocrit',
-    '_WBCCount',
-    'WBC',
-    'Neutrophils',
-    'Platelet Count',
-    'INR(PT)',
-    'Glucose (ch)',
-    'Glucose (blood gas)',
-    'Lactate',
-    'Sodium (ch)',
-    'Sodium (whole blood)',
-    'Potassium (ch)',
-    'Potassium (whole blood)',
-    'Total Calcium',
-    'Phosphate',
-    '_Total Protein',
-    'Albumin',
-    'ALT',
-    'AST',
-    'Total Bilirubin',
-    'Urea Nitrogen',
-    'Creatinine',
-    'Uric Acid',
-    'C-Reactive Protein',
-    'Troponin I',
-    'Troponin T'
-]
+from tqdm import tqdm
+from joblib import Parallel, delayed
 
 
 def tsv_to_csv(fname, output_fname):
@@ -87,20 +29,61 @@ def tsv_to_csv(fname, output_fname):
 
         new_rows.append(row_list)
 
-
     output = pd.DataFrame(new_rows, columns=HEADER)
     output.to_csv(output_fname, index=False)
 
+def _hashing(records, key):
+    records_dict = {}
+    for i, record in records.iterrows():
+        r_key = record[key]
+        records_dict[r_key] = records_dict.get(r_key, list())
+        records_dict[r_key].append(record)
+    return records_dict
 
-def _test_read_csv():
-    read_csv('/home/mike/codes/predicting_pressure_ulcer/preprocessed/mimic_extracted.csv')
+def hashing(csv_fname, key, chunksize=100000, dtypes=None, num_workers=10):
+    import pdb
+    #for df_chunk in tqdm(pd.read_csv(csv_fname, dtype=dtypes, chunksize=100)):
+    def _hash(records, key):
+        records_dict = {}
+        for i, record in records.iterrows():
+            r_key = record[key]
+            records_dict[r_key] = records_dict.get(r_key, list())
+            #records_dict[r_key].append(record)
+        return records_dict 
 
+    results = Parallel(n_jobs=num_workers)(delayed(_hash)(
+        records=df_chunk,
+        key=key) for df_chunk in tqdm(pd.read_csv(csv_fname, dtype=dtypes, chunksize=chunksize)))
+
+    pdb.set_trace()
+
+strptime_s = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
+strptime_m = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
+def strptime(x):
+    try:
+        return strptime_s(x)
+    except:
+        return strptime_m(x)
+    
+def _test_hashing(csv_fname, output_fname=None):
+    from constants import DTYPES
+    #data = pd.read_csv(csv_fname, dtype=DTYPES)
+    recordss = hashing(csv_fname, 'ICUSTAY_ID', dtypes=DTYPES, num_workers=20)
+    icu_ids = [str(r) for r in recordss.keys()]
+    # save it
+    if output_fname is not None:
+        with open(output_fname, 'wt') as f:
+            f.writelines('\n'.join(icu_ids))
+        
 
 if __name__ == '__main__':
-    input_fname = '/home/mike/codes/predicting_pressure_ulcer/dataset/1026/MIMIC_extracted.tsv'
-    output_fname = '/home/mike/codes/predicting_pressure_ulcer/preprocessed/mimic_extracted.csv'
-    tsv_to_csv(input_fname, output_fname)
+#    input_fname = '/home/mike/codes/predicting_pressure_ulcer/dataset/1026/MIMIC_extracted.tsv'
+#    output_fname = '/home/mike/codes/predicting_pressure_ulcer/preprocessed/mimic_extracted.csv'
+#    tsv_to_csv(input_fname, output_fname)
 
+    input_fname = '/home/mike/codes/predicting_pressure_ulcer/preprocessed/01_outlier.csv'
+    output_fname = '/home/mike/codes/predicting_pressure_ulcer/preprocessed/icustay_ids.txt'
+    _test_hashing(input_fname, output_fname)
 
 
 
