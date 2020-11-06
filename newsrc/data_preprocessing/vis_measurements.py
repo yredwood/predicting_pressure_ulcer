@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib
 import pandas as pd
+import numpy as np 
 import math
 
 from joblib import Parallel, delayed
@@ -166,18 +167,22 @@ if __name__ == '__main__':
         
         mpoint_list, sore_list = [], []
         key_list = []
+        neg_avg_length = []
         for key, records in record_dict.items():
             mp, sp = get_sore_points(records, header)
             if len(sp) > 0:
                 mpoint_list.append(mp)
                 sore_list.append(sp)
                 key_list.append(key)
+            else:
+                avg_length.append( len(mp) )
 
         cpd = {
             'k._8': mpoint_list,
             'r*_12': sore_list,
         }
         plot_with_colors(output_fname, cpd, yticks=key_list)
+        print ('control group avg length: {}'.format(np.mean(avg_length)))
 
     
     # example 2. vis prd points
