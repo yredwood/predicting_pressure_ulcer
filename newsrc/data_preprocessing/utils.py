@@ -66,6 +66,9 @@ def hashing(csv_fname, key, chunksize=100000, dtypes=None, num_workers=10):
 strptime_s = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
 strptime_m = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
 def strptime(x):
+    if '.' in x:
+        x = x[:x.index('.')]
+
     try:
         return strptime_s(x)
     except:

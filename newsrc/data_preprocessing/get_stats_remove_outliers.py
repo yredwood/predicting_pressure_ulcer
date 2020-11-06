@@ -6,7 +6,7 @@ import pdb
 
 def get_stats(fname, output_fname):
     df = pd.read_csv(fname, dtype=DTYPES)
-    statistic_header = 'item,avg,std,min,max,\%_exists'
+    atatistic_header = 'item,avg,std,min,max,exist_ratio'
     lines = [statistic_header]
     for label, content in df.iteritems():
         if not isinstance(content[0], float):
